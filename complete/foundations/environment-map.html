@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>3D Model Rotation code</title>
+  <style>
+    body{
+      padding: 0;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+<!--
+  "three": "https://unpkg.com/three@0.150.0/build/three.module.js",             
+  "three/addons/":"https://unpkg.com/three@0.150.0/examples/jsm/"
+-->
+<script type="importmap">
+{
+  "imports": {
+    "three": "../../libs/three/build/three.module.js",
+    "three/addons/": "../../libs/three/examples/jsm/",
+    "libs/": "../../libs/"
+  }
+}
+</script>
+<script  type="module"> 
+  import * as THREE from "three"
+  import { OrbitControls } from "three/addons/controls/OrbitControls.js"
+  import { GUI } from "three/addons/libs/lil-gui.module.min.js"
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+  import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
+  import { RGBELoader } from 'three/addons/loaders/RGBELoader.js';
+  import { LoadingBar } from 'libs/LoadingBar.js';
+
+//idk
+  let scene, camera, renderer, loadingBar, controls, model, gui;
+
+  init();
+
+  function init(){
+    scene = new THREE.Scene();
+//Backhroung color
+    scene.background = new THREE.Color( 0xaaaaaa );
+    //(frustum)
+    camera = new THREE.PerspectiveCamera( 60, window.innerWidth / window.innerHeight, 0.1, 10000 ); 
+
+//Camera Position (Zoom in and out)    
+    camera.position.set(0, 0.05, 3000);
+    
+    const ambient = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 0.5);
+    scene.add(ambient);
+    
+    const light = new THREE.DirectionalLight(0xFFFFFF, 3);
+    light.position.set( 0.2, 1, 1 );
+    scene.add(light);
+    
+    renderer = new THREE.WebGLRenderer({antialias: true});
+    renderer.setPixelRatio( Math.max(window.devicePixelRatio, 2) );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
+        
+    controls = new OrbitControls( camera, renderer.domElement );
+    controls.target.y = 0.04;
+    controls.update();
+      
+    window.addEventListener( 'resize', resize, false);
+
+    const options = {
+      outputColorSpace: 'Linear',
+      physicallyCorrectLights: false
+    }
+
+    gui = new GUI();
+    gui.add( options, 'outputColorSpace', [ 'Linear', 'SRGB' ]).onChange( value => {
+      switch(value){
+        case 'Linear':
+          renderer.outputColorSpace = THREE.linearColorSpace;
+          break;
+        case 'SRGB':
+          renderer.ColorSpace = THREE.SRGBColorSpace;
+          break
+      }
+    });
+    gui.add( options, 'physicallyCorrectLights').onChange( value => {
+      renderer.physicallyCorrectLights = value;
+    });
+
+    setEnvironment();
+
+    loadingBar = new LoadingBar();
+        
+    loadGLTF();
+  }
+
+  function setEnvironment(){
+    const loader = new RGBELoader();
+    const pmremGenerator = new THREE.PMREMGenerator( renderer );
+    pmremGenerator.compileEquirectangularShader();
+    
+    loader.load( '../../assets/hdr/venice_sunset_1k.hdr', ( texture ) => {
+      const envMap = pmremGenerator.fromEquirectangular( texture ).texture;
+      pmremGenerator.dispose();
+
+      scene.environment = envMap;
+
+    }, undefined, (err)=>{
+        console.error( 'An error occurred setting the environment.' + err.message );
+    } );
+  }
+    
+  function loadGLTF(){
+    const loader = new GLTFLoader( ).setPath('../../assets/');
+    const dracoLoader = new DRACOLoader();
+    dracoLoader.setDecoderPath( '../../libs/three/examples/jsm/libs/draco/' );
+    loader.setDRACOLoader( dracoLoader );
+
+// Load a glTF resource
+    loader.load(
+// CAD Insert here
+    'Tester3000.glb',
+// called when the resource is loaded
+      gltf => {
+        const bbox = new THREE.Box3().setFromObject( gltf.scene );
+// Rotating the CAD file
+        gltf.scene.rotateX(-Math.PI / 2);      
+        scene.add( gltf.scene );
+        loadingBar.visible = false;
+        update();
+      },
+
+  // called when loading has errors
+      err => {
+
+        console.error( err.message );
+
+      }  
+    );
+  }
+  function update(){
+    requestAnimationFrame( update );
+    
+    renderer.render( scene, camera );  
+  }
+
+
+
+
+
+
+  
+  function resize(){
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+  }
+</script>
+</body>
+</html>

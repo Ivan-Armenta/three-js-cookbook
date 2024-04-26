@@ -9,11 +9,21 @@
       padding: 0;
       margin: 0;
     }
+
+    #3d-container {
+      width: 100%;
+      height: 100vh;
+      position: absolute;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      border: 1px solid black;
+    }
   </style>
 </head>
 
 <body>
-  
+<div id="3d-container"></div>
 <script type="importmap">
 {
   "imports": {
@@ -39,13 +49,13 @@
 
   function init(){
     scene = new THREE.Scene();
-//Backhroung color
+    //Background color
     scene.background = new THREE.Color( 0xffffff );
     //(frustum)
     camera = new THREE.PerspectiveCamera( 59, window.innerWidth / window.innerHeight, 0.1, 10000 ); 
 
-//Camera Position (Zoom in and out)    
-    camera.position.set(0, 1, 2);
+    //Camera Position (Zoom in and out)    
+    camera.position.set(0.1, .8, 2);
     
     const ambient = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 0.5);
     scene.add(ambient);
@@ -58,7 +68,10 @@
     renderer.setPixelRatio( Math.max(window.devicePixelRatio, 2) );
     renderer.setSize( window.innerWidth, window.innerHeight );
     document.body.appendChild( renderer.domElement );
-        
+    // const container = document.getElementById('3d-container');
+    // renderer.setSize(container.offsetWidth, container.offsetHeight);
+    // container.appendChild(renderer.domElement);
+    
     controls = new OrbitControls( camera, renderer.domElement );
     // controls.target.y = 0.04;
     controls.target.set(0, 1, 0);

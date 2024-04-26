@@ -448,30 +448,19 @@ function DRACOWorker() {
 						const buffers = geometry.attributes.map( ( attr ) => attr.array.buffer );
 
 						if ( geometry.index ) buffers.push( geometry.index.array.buffer );
-
 						self.postMessage( { type: 'decode', id: message.id, geometry }, buffers );
-
 					} catch ( error ) {
-
 						console.error( error );
-
 						self.postMessage( { type: 'error', id: message.id, error: error.message } );
-
 					} finally {
-
 						draco.destroy( decoder );
-
 					}
-
 				} );
 				break;
-
 		}
-
 	};
 
 	function decodeGeometry( draco, decoder, array, taskConfig ) {
-
 		const attributeIDs = taskConfig.attributeIDs;
 		const attributeTypes = taskConfig.attributeTypes;
 
@@ -481,34 +470,22 @@ function DRACOWorker() {
 		const geometryType = decoder.GetEncodedGeometryType( array );
 
 		if ( geometryType === draco.TRIANGULAR_MESH ) {
-
 			dracoGeometry = new draco.Mesh();
 			decodingStatus = decoder.DecodeArrayToMesh( array, array.byteLength, dracoGeometry );
-
 		} else if ( geometryType === draco.POINT_CLOUD ) {
-
 			dracoGeometry = new draco.PointCloud();
 			decodingStatus = decoder.DecodeArrayToPointCloud( array, array.byteLength, dracoGeometry );
-
 		} else {
-
 			throw new Error( 'THREE.DRACOLoader: Unexpected geometry type.' );
-
 		}
-
 		if ( ! decodingStatus.ok() || dracoGeometry.ptr === 0 ) {
-
 			throw new Error( 'THREE.DRACOLoader: Decoding failed: ' + decodingStatus.error_msg() );
-
 		}
-
 		const geometry = { index: null, attributes: [] };
 
 		// Gather all vertex attributes.
 		for ( const attributeName in attributeIDs ) {
-
 			const attributeType = self[ attributeTypes[ attributeName ] ];
-
 			let attribute;
 			let attributeID;
 
@@ -517,39 +494,25 @@ function DRACOWorker() {
 			// a Draco file may contain a custom set of attributes, identified by known unique
 			// IDs. glTF files always do the latter, and `.drc` files typically do the former.
 			if ( taskConfig.useUniqueIDs ) {
-
 				attributeID = attributeIDs[ attributeName ];
 				attribute = decoder.GetAttributeByUniqueId( dracoGeometry, attributeID );
-
 			} else {
-
 				attributeID = decoder.GetAttributeId( dracoGeometry, draco[ attributeIDs[ attributeName ] ] );
-
 				if ( attributeID === - 1 ) continue;
-
 				attribute = decoder.GetAttribute( dracoGeometry, attributeID );
-
 			}
-
 			const attributeResult = decodeAttribute( draco, decoder, dracoGeometry, attributeName, attributeType, attribute );
 
 			if ( attributeName === 'color' ) {
-
 				attributeResult.vertexColorSpace = taskConfig.vertexColorSpace;
-
 			}
-
 			geometry.attributes.push( attributeResult );
-
 		}
 
 		// Add index.
 		if ( geometryType === draco.TRIANGULAR_MESH ) {
-
 			geometry.index = decodeIndex( draco, decoder, dracoGeometry );
-
 		}
-
 		draco.destroy( dracoGeometry );
 
 		return geometry;
@@ -557,18 +520,14 @@ function DRACOWorker() {
 	}
 
 	function decodeIndex( draco, decoder, dracoGeometry ) {
-
 		const numFaces = dracoGeometry.num_faces();
 		const numIndices = numFaces * 3;
 		const byteLength = numIndices * 4;
-
 		const ptr = draco._malloc( byteLength );
 		decoder.GetTrianglesUInt32Array( dracoGeometry, byteLength, ptr );
 		const index = new Uint32Array( draco.HEAPF32.buffer, ptr, numIndices ).slice();
 		draco._free( ptr );
-
 		return { array: index, itemSize: 1 };
-
 	}
 
 	function decodeAttribute( draco, decoder, dracoGeometry, attributeName, attributeType, attribute ) {
@@ -589,13 +548,10 @@ function DRACOWorker() {
 			array: array,
 			itemSize: numComponents
 		};
-
 	}
 
 	function getDracoDataType( draco, attributeType ) {
-
 		switch ( attributeType ) {
-
 			case Float32Array: return draco.DT_FLOAT32;
 			case Int8Array: return draco.DT_INT8;
 			case Int16Array: return draco.DT_INT16;
@@ -603,11 +559,7 @@ function DRACOWorker() {
 			case Uint8Array: return draco.DT_UINT8;
 			case Uint16Array: return draco.DT_UINT16;
 			case Uint32Array: return draco.DT_UINT32;
-
 		}
-
 	}
-
 }
-
 export { DRACOLoader };

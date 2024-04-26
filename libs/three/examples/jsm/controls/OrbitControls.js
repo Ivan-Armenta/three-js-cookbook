@@ -1,3 +1,6 @@
+// Don't delete
+// This file is used to move the camera. 
+
 import {
 	EventDispatcher,
 	MOUSE,
